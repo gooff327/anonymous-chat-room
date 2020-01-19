@@ -1,18 +1,27 @@
 <template>
   <v-list>
-    <v-list-item
-      :key="item.text"
-      v-for="item in data"
-      link
-    >
-      <v-list-item-avatar>
-        <img
-          :src="`https://randomuser.me/api/portraits/men/${item.picture}.jpg`"
-          alt=""
+    <v-list-item-group @change="$emit('roomSelected', activeRoom)" v-model="activeRoom">
+      <v-list-item
+        :key="index"
+        v-for="(item, index) of rooms"
+        link
+      >
+        <v-list-item-avatar>
+          <img
+            :src="`https://randomuser.me/api/portraits/men/1.jpg`"
+            alt=""
+          >
+        </v-list-item-avatar>
+        <v-badge
+          :color="item.split('***')[0] === 'public' ? 'pink' : 'error'"
+          :icon="item.split('***')[0] === 'public' ? 'mdi-lock-open-variant' : 'mdi-lock'"
+          bordered
+          inline
         >
-      </v-list-item-avatar>
-      <v-list-item-title v-text="item.text" />
-    </v-list-item>
+          <v-list-item-title v-text="item" />
+        </v-badge>
+      </v-list-item>
+    </v-list-item-group>
   </v-list>
 </template>
 
@@ -20,8 +29,11 @@
 export default {
   name: 'Rooms',
   props: {
-    data: { type: Array, default: () => [] }
-  }
+    rooms: { type: Array, default: () => [] }
+  },
+  data: () => ({
+    activeRoom: null
+  })
 }
 </script>
 

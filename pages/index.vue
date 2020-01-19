@@ -9,13 +9,15 @@
         Chat anonymously on the internet
       </h2>
       <div class="links flex justify-around">
-        <p class="flex-4 w-3/4">
-          <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="username" type="text" placeholder="Username">
-        </p>
+        <v-text-field id="username" type="text" placeholder="Username">
+          <template slot="append">
+            <v-btn @click="$router.push('/home')">
+              Chat
+            </v-btn>
+          </template>
+        </v-text-field>
         <p class="flex-1">
-          <button @click="() => {$router.push('/home')}" class="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded">
-            Chat
-          </button>
+
         </p>
       </div>
     </div>

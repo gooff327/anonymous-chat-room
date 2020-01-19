@@ -1,4 +1,4 @@
-
+const webpack = require('webpack')
 module.exports = {
   mode: 'universal',
   /*
@@ -36,7 +36,7 @@ module.exports = {
     // Doc: https://github.com/nuxt-community/eslint-module
     '@nuxtjs/eslint-module',
     // Doc: https://github.com/nuxt-community/nuxt-tailwindcss
-    '@nuxtjs/tailwindcss',
+    // '@nuxtjs/tailwindcss',
     '@nuxtjs/vuetify'
   ],
   /*
@@ -63,6 +63,12 @@ module.exports = {
     /*
     ** You can extend webpack config here
     */
+    vendor: ['lodash'],
+    plugins: [
+      new webpack.ProvidePlugin({
+        _: 'lodash'
+      })
+    ],
     extend (config, ctx) {
     }
   }

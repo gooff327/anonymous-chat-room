@@ -2,16 +2,16 @@
   <section class="home-wrapper">
     <v-app id="inspire">
       <v-navigation-drawer
+        v-model="drawer"
         app
         clipped
-        v-model="drawer"
       >
         <v-list dense>
           <v-list-item-group v-model="activeMenu">
             <v-list-item
               :key="item.text"
-              link
               v-for="item in menus"
+              link
             >
               <v-list-item-action>
                 <v-icon>{{ item.icon }}</v-icon>
@@ -23,22 +23,68 @@
               </v-list-item-content>
             </v-list-item>
           </v-list-item-group>
-          <v-subheader class="mt-4 grey--text text--darken-1">ROOMS</v-subheader>
-          <Rooms :data="rooms"></Rooms>
-          <v-list-item
-            class="mt-4"
-            link
+          <v-subheader v-if="rooms.length > 0" class="mt-4 grey--text text--darken-1">
+            ROOMS
+          </v-subheader>
+          <Rooms @roomSelected="handleActiveRoomChange" :rooms="rooms" />
+          <v-menu
+            :close-on-content-click="false"
+            :nudge-width="200"
+            v-model="roomCreatorVisible"
+            offset-x
           >
-            <v-list-item-action>
-              <v-icon color="grey darken-1">mdi-plus-circle-outline</v-icon>
-            </v-list-item-action>
-            <v-list-item-title class="grey--text text--darken-1">Create Room</v-list-item-title>
-          </v-list-item>
+            <template v-slot:activator="{ on }">
+              <v-list-item
+                v-on="on"
+                class="mt-4"
+                link
+              >
+                <v-list-item-action>
+                  <v-icon color="grey darken-1">
+                    mdi-plus-circle-outline
+                  </v-icon>
+                </v-list-item-action>
+                <v-list-item-title class="grey--text text--darken-1">
+                  Create Room
+                </v-list-item-title>
+              </v-list-item>
+            </template>
+            <v-card @keydown.enter="createRoom">
+              <v-list-item three-line>
+                <v-list-item-content>
+                  <div class="overline mb-4">
+                    NEW ROOM
+                  </div>
+                  <v-text-field
+                    :error-messages="errorMessages"
+                    :success-messages="successMessages"
+                    :loading="loading"
+                    v-model="roomName"
+                    required
+                    placeholder="Please input your room name"
+                  />
+                </v-list-item-content>
+              </v-list-item>
+              <v-card-actions>
+                <v-spacer />
+                <v-btn @click="roomCreatorVisible = false" text>
+                  Cancel
+                </v-btn>
+                <v-btn @click="createRoom" :disabled="successMessages.length === 0" color="primary" text>
+                  Create
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-menu>
           <v-list-item link>
             <v-list-item-action>
-              <v-icon color="grey darken-1">mdi-settings</v-icon>
+              <v-icon color="grey darken-1">
+                mdi-settings
+              </v-icon>
             </v-list-item-action>
-            <v-list-item-title class="grey--text text--darken-1">Manage Subscriptions</v-list-item-title>
+            <v-list-item-title class="grey--text text--darken-1">
+              Manage Subscriptions
+            </v-list-item-title>
           </v-list-item>
         </v-list>
       </v-navigation-drawer>
@@ -49,12 +95,14 @@
         color="teal"
         dense
       >
-        <v-app-bar-nav-icon @click.stop="drawer = !drawer"/>
-        <v-icon class="mx-4">mdi-incognito</v-icon>
+        <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
+        <v-icon class="mx-4">
+          mdi-incognito
+        </v-icon>
         <v-toolbar-title class="mr-12 align-center">
           <span class="title">Keyboard-Hero</span>
         </v-toolbar-title>
-        <v-spacer/>
+        <v-spacer />
         <v-row
           align="center"
           style="max-width: 300px"
@@ -77,80 +125,134 @@
             justify="center"
           >
             <v-col class="shrink">
-              <v-tooltip right>
-                <template v-slot:activator="{ on }">
-                  <v-btn
-                    :href="source"
-                    icon
-                    large
-                    target="_blank"
-                    v-on="on"
-                  >
-                    <v-icon large>mdi-code-tags</v-icon>
-                  </v-btn>
-                </template>
-                <span>Source</span>
-              </v-tooltip>
-              <v-tooltip right>
-                <template v-slot:activator="{ on }">
-                  <v-btn
-                    href="https://codepen.io/johnjleider/pen/aezMOO"
-                    icon
-                    large
-                    target="_blank"
-                    v-on="on"
-                  >
-                    <v-icon large>mdi-codepen</v-icon>
-                  </v-btn>
-                </template>
-                <span>Codepen</span>
-              </v-tooltip>
+              <Chat/>
             </v-col>
           </v-row>
         </v-container>
       </v-content>
     </v-app>
+    <v-snackbar
+      v-bind="snackbarProps"
+    >
+      {{ snackbarProps.content }}
+      <v-btn
+        @click="$set(snackbarProps, 'value', false)"
+        dark
+        text
+      >
+        Close
+      </v-btn>
+    </v-snackbar>
   </section>
 </template>
 
 <script>
+import { debounce } from 'lodash'
+
 import Rooms from '../components/Rooms'
+import Chat from '../components/Chat'
 import socket from '../plugins/socket.io'
+
 export default {
   components: {
-    Rooms
+    Rooms,
+    Chat
   },
   props: {
     source: String
   },
-  data: () => ({
-    drawer: null,
-    activeMenu: 0,
-    menus: [
-      { icon: 'mdi-message', text: 'Messages' },
-      { icon: 'mdi-trending-up', text: 'Trending' },
-      { icon: 'mdi-history', text: 'History' },
-      { icon: 'mdi-playlist-music', text: 'Playlists' }
-    ],
-    rooms: [
-      { picture: 28, text: 'Joseph' },
-      { picture: 38, text: 'Apple' },
-      { picture: 48, text: 'Xbox Ahoy' },
-      { picture: 58, text: 'Nokia' },
-      { picture: 78, text: 'MKBHD' }
-    ]
-  }),
+  data () {
+    return {
+      roomName: '',
+      roomCreatorVisible: false,
+      drawer: null,
+      activeMenu: 0,
+      activeRooms: [],
+      errorMessages: [],
+      successMessages: [],
+      loading: false,
+      snackbarProps: {
+        value: true,
+        top: 'top',
+        color: '#41bb83',
+        timeout: 2000,
+        content: 'DEFAULT CONTENT'
+      },
+      message: 'test',
+      menus: [
+        { icon: 'mdi-message', text: 'Messages' },
+        { icon: 'mdi-trending-up', text: 'Trending' },
+        { icon: 'mdi-history', text: 'History' },
+        { icon: 'mdi-playlist-music', text: 'Playlists' }
+      ],
+      rooms: []
+    }
+  },
+  watch: {
+    roomName (value) {
+      if (value === '') {
+        this.successMessages = []
+        this.errorMessages = []
+        return
+      }
+
+      this.successMessages.splice(0, this.successMessages.length)
+      this.errorMessages.splice(0, this.errorMessages.length)
+
+      if (value.length > 10) {
+        this.errorMessages.push('Room name must be less than 16 characters')
+        this.successMessages.splice(0, this.successMessages.length)
+      } else {
+        this.loading = true
+        this.checkName(value)
+      }
+    }
+  },
   created () {
     this.$vuetify.theme.dark = true
   },
   mounted () {
-    this.getRooms()
-    socket.emit('chat', 'hi server')
+    socket.emit('getRooms')
+    socket.on('rooms', (data) => {
+      this.rooms.splice(0, this.rooms.length, ...data)
+    })
   },
   methods: {
-    getRooms () {
-      console.log(this.$axios.$get('/rooms'))
+    handleActiveRoomChange (val) {
+      const index = this.activeRooms.indexOf(this.rooms[val])
+      if (index === 0) {
+        return
+      }
+      if (index !== -1) {
+        this.activeRooms.splice(index, 1)
+        this.activeRooms === [] ? this.activeRooms.push(this.rooms[val]) : this.activeRooms.unshift(this.rooms[val])
+      } else {
+        console.log(this.rooms[val])
+        socket.emit('join', this.rooms[val])
+        this.activeRooms === [] ? this.activeRooms.push(this.rooms[val]) : this.activeRooms.unshift(this.rooms[val])
+      }
+    },
+    checkName: debounce(function (value) {
+      return this.$axios.get('/check_room', { params: { name: value } }).then(
+        ({ data }) => {
+          if (data.creatable) {
+            this.successMessages.push('room name is invalid')
+          } else {
+            this.errorMessages.push('room name is invalid')
+          }
+          this.loading = false
+        }
+      )
+    }, 500, {
+      'leading': false,
+      'trailing': true
+    }),
+    createRoom () {
+      socket.emit('join', this.roomName)
+      this.roomName = ''
+      this.roomCreatorVisible = false
     }
+
   }
 }
 </script>
