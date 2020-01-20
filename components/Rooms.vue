@@ -12,14 +12,23 @@
             alt=""
           >
         </v-list-item-avatar>
-        <v-list-item-title v-text="item" />
+        <v-list-item-title v-text="item.name" />
         <v-badge
-          v-if="active.includes(item)"
-          :color="active.includes(item) ? 'green' : 'pink'"
+          :color="active.includes(item.name) ? 'green' : 'pink'"
           dot
           bordered
-          inline
-        />
+        >
+          <v-chip
+            color="grey"
+            outlined
+            label
+          >
+            <v-icon left>
+              mdi-account-group-outline
+            </v-icon>
+            {{ item.length }}
+          </v-chip>
+        </v-badge>
       </v-list-item>
     </v-list-item-group>
   </v-list>

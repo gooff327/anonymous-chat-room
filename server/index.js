@@ -2,6 +2,7 @@ const Koa = require('koa')
 const consola = require('consola')
 const { Nuxt, Builder } = require('nuxt')
 const _ = require('lodash')
+
 const router = require('./router/index').router
 
 const app = new Koa()
@@ -15,35 +16,51 @@ config.dev = app.env !== 'production'
 io.on('connection', onSocketConnected)
 exports.io = io
 const USER_SOCKET_MAP = {}
+const roomFilter = () => {
+  const ROOMS = []
+  _.map(io.sockets.adapter.rooms, ({ length, sockets }, name) => {
+    if (name.length <= 10) {
+      ROOMS.push({ name, length, members: _.map(sockets, (_, key) => USER_SOCKET_MAP[key]) })
+    }
+  })
+  return ROOMS
+}
 function onSocketConnected (socket) {
   socket.on('getRooms', () => {
-    consola.info(_.map(io.sockets.adapter.rooms, (item, key) => { return [item.length, key] }))
-    socket.emit('rooms', Object.keys(io.sockets.adapter.rooms).filter(item => item.length <= 10))
+    socket.emit('rooms', roomFilter())
   })
   socket.on('disconnect', () => {
     consola.warn(`${socket.id} has disconnected`)
   })
+  // JOIN ROOM
   socket.on('join', (room, user) => {
     if (USER_SOCKET_MAP[socket.id] === undefined) {
-      USER_SOCKET_MAP[socket.id] = user
+      USER_SOCKET_MAP[socket.id] = user || socket.id
     }
-
     if (io.sockets.adapter.rooms[room] !== undefined) {
       socket.join(room)
-      io.to(room).emit('message', { username: user, room, action: 'join', content: null })
+      io.to(room).emit('message', { username: user, room, action: 'JOIN', content: null })
+      const ROOM = {
+        name: room,
+        length: io.sockets.adapter.rooms[room].length,
+        members: _.map(io.sockets.adapter.rooms[room].sockets, (_, key) => USER_SOCKET_MAP[key]) }
+      io.to(room).emit('rooms::update', ROOM)
       consola.info(`${socket.id} has joined ROOM__${room}`)
     } else {
       socket.join(room)
       consola.info(`${socket.id} create ROOM__${room}`)
-      io.sockets.emit('rooms', Object.keys(io.sockets.adapter.rooms).filter(item => item.length <= 10))
+      io.sockets.emit('rooms', roomFilter())
     }
   })
+
+
   socket.on('message', ({ room, content, username }) => {
-    io.to(room).emit('message', { username, room, action: 'default', content })
+    io.to(room).emit('message', { username, room, action: 'DEFAULT', content })
   })
-  socket.on('leave', (room) => {
+  socket.on('leave', (room, user) => {
     consola.info(`${socket.id} has leave ROOM__${room}`)
     socket.leave(room)
+    io.to(room).emit('message', { username: user, room, action: 'LEAVE', content: null })
   })
 }
 

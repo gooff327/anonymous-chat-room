@@ -119,7 +119,7 @@
       </v-app-bar>
 
       <v-content>
-        <Chat room="" />
+        <Chat v-if="activeRooms.length >= 1" :room="openedRoom" :messages="currentMessages" />
       </v-content>
     </v-app>
     <v-snackbar
@@ -149,9 +149,6 @@ export default {
     Rooms,
     Chat
   },
-  props: {
-    source: String
-  },
   data () {
     return {
       username: '',
@@ -180,6 +177,15 @@ export default {
       rooms: []
     }
   },
+  computed: {
+    openedRoom () {
+      const INDEX = this.rooms.findIndex(item => item.name === this.activeRooms[0])
+      return this.rooms[INDEX]
+    },
+    currentMessages () {
+      return this.messages[this.activeRooms[0]]
+    }
+  },
   watch: {
     roomName (value) {
       if (value === '') {
@@ -203,6 +209,11 @@ export default {
   created () {
     this.$vuetify.theme.dark = true
   },
+  beforeDestroy () {
+    socket.off('rooms')
+    socket.off('rooms::update')
+    socket.off('message')
+  },
   mounted () {
     socket.emit('getRooms')
     this.username = sessionStorage.getItem('username')
@@ -217,20 +228,28 @@ export default {
         this.messages[room].push(MSG_ENTRY)
       }
     })
+    socket.on('rooms::update', (room) => {
+      const INDEX = this.rooms.findIndex(item => item.name === room.name)
+      if (INDEX === -1) {
+        socket.emit('getRooms')
+      } else {
+        this.$set(this.rooms, INDEX, room)
+      }
+    })
   },
   methods: {
     handleActiveRoomChange (val) {
-      const index = this.activeRooms.indexOf(this.rooms[val])
-      if (index === 0 || val === undefined) {
+      const index = val === undefined ? 0 : this.activeRooms.indexOf(this.rooms[val].name)
+      if (index === 0) {
         return
       }
       if (index !== -1) {
         this.activeRooms.splice(index, 1)
-        this.activeRooms === [] ? this.activeRooms.push(this.rooms[val]) : this.activeRooms.unshift(this.rooms[val])
+        this.activeRooms === [] ? this.activeRooms.push(this.rooms[val].name) : this.activeRooms.unshift(this.rooms[val].name)
       } else {
-        socket.emit('join', this.rooms[val], this.username)
-        socket.send({ username: this.username, content: 'hello', room: this.rooms[val] })
-        this.activeRooms === [] ? this.activeRooms.push(this.rooms[val]) : this.activeRooms.unshift(this.rooms[val])
+        socket.emit('join', this.rooms[val].name, this.username)
+        socket.send({ username: this.username, content: 'helloashdyiuasdashduhauisdhauhelloashdyiuasdashduhauisdhauhelloashdyiuasdashduhauisdhauhelloashdyiuasdashduhauisdhauhelloashdyiuasdashduhauisdhauhelloashdyiuasdashduhauisdhauhelloashdyiuasdashduhauisdhau', room: this.rooms[val].name })
+        this.activeRooms === [] ? this.activeRooms.push(this.rooms[val].name) : this.activeRooms.unshift(this.rooms[val].name)
       }
     },
     checkName: debounce(function (value) {
