@@ -12,14 +12,14 @@
             alt=""
           >
         </v-list-item-avatar>
+        <v-list-item-title v-text="item" />
         <v-badge
-          :color="item.split('***')[0] === 'public' ? 'pink' : 'error'"
-          :icon="item.split('***')[0] === 'public' ? 'mdi-lock-open-variant' : 'mdi-lock'"
+          v-if="active.includes(item)"
+          :color="active.includes(item) ? 'green' : 'pink'"
+          dot
           bordered
           inline
-        >
-          <v-list-item-title v-text="item" />
-        </v-badge>
+        />
       </v-list-item>
     </v-list-item-group>
   </v-list>
@@ -29,7 +29,8 @@
 export default {
   name: 'Rooms',
   props: {
-    rooms: { type: Array, default: () => [] }
+    rooms: { type: Array, default: () => [] },
+    active: { type: Array, default: () => [] }
   },
   data: () => ({
     activeRoom: null

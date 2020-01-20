@@ -26,7 +26,7 @@
           <v-subheader v-if="rooms.length > 0" class="mt-4 grey--text text--darken-1">
             ROOMS
           </v-subheader>
-          <Rooms @roomSelected="handleActiveRoomChange" :rooms="rooms" />
+          <Rooms :active="activeRooms" @roomSelected="handleActiveRoomChange" :rooms="rooms" />
           <v-menu
             :close-on-content-click="false"
             :nudge-width="200"
@@ -119,16 +119,7 @@
       </v-app-bar>
 
       <v-content>
-        <v-container class="fill-height">
-          <v-row
-            align="center"
-            justify="center"
-          >
-            <v-col class="shrink">
-              <Chat/>
-            </v-col>
-          </v-row>
-        </v-container>
+        <Chat room="" />
       </v-content>
     </v-app>
     <v-snackbar
@@ -163,6 +154,7 @@ export default {
   },
   data () {
     return {
+      username: '',
       roomName: '',
       roomCreatorVisible: false,
       drawer: null,
@@ -178,7 +170,7 @@ export default {
         timeout: 2000,
         content: 'DEFAULT CONTENT'
       },
-      message: 'test',
+      messages: {},
       menus: [
         { icon: 'mdi-message', text: 'Messages' },
         { icon: 'mdi-trending-up', text: 'Trending' },
@@ -213,22 +205,31 @@ export default {
   },
   mounted () {
     socket.emit('getRooms')
+    this.username = sessionStorage.getItem('username')
     socket.on('rooms', (data) => {
       this.rooms.splice(0, this.rooms.length, ...data)
+    })
+    socket.on('message', ({ room, username, content, action }) => {
+      const MSG_ENTRY = { username, content, action }
+      if (this.messages[room] === undefined) {
+        this.$set(this.messages, room, [MSG_ENTRY])
+      } else {
+        this.messages[room].push(MSG_ENTRY)
+      }
     })
   },
   methods: {
     handleActiveRoomChange (val) {
       const index = this.activeRooms.indexOf(this.rooms[val])
-      if (index === 0) {
+      if (index === 0 || val === undefined) {
         return
       }
       if (index !== -1) {
         this.activeRooms.splice(index, 1)
         this.activeRooms === [] ? this.activeRooms.push(this.rooms[val]) : this.activeRooms.unshift(this.rooms[val])
       } else {
-        console.log(this.rooms[val])
-        socket.emit('join', this.rooms[val])
+        socket.emit('join', this.rooms[val], this.username)
+        socket.send({ username: this.username, content: 'hello', room: this.rooms[val] })
         this.activeRooms === [] ? this.activeRooms.push(this.rooms[val]) : this.activeRooms.unshift(this.rooms[val])
       }
     },
@@ -249,6 +250,7 @@ export default {
     }),
     createRoom () {
       socket.emit('join', this.roomName)
+      this.activeRooms.push(this.roomName)
       this.roomName = ''
       this.roomCreatorVisible = false
     }
@@ -256,5 +258,3 @@ export default {
   }
 }
 </script>
-<style lang="stylus">
-</style>

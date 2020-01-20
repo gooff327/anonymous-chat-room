@@ -9,9 +9,9 @@
         Chat anonymously on the internet
       </h2>
       <div class="links flex justify-around">
-        <v-text-field id="username" type="text" placeholder="Username">
+        <v-text-field id="username" type="text" v-model="username" placeholder="Username">
           <template slot="append">
-            <v-btn @click="$router.push('/home')">
+            <v-btn @click="submitHandler">
               Chat
             </v-btn>
           </template>
@@ -30,6 +30,15 @@ import Logo from '~/components/Logo.vue'
 export default {
   components: {
     Logo
+  },
+  data: () => ({
+    username: ''
+  }),
+  methods: {
+    submitHandler () {
+      sessionStorage.setItem('username', this.username)
+      this.$router.push('/home')
+    }
   }
 }
 </script>

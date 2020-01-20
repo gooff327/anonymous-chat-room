@@ -1,7 +1,7 @@
 const Koa = require('koa')
 const consola = require('consola')
 const { Nuxt, Builder } = require('nuxt')
-
+const _ = require('lodash')
 const router = require('./router/index').router
 
 const app = new Koa()
@@ -14,17 +14,32 @@ const config = require('../nuxt.config.js')
 config.dev = app.env !== 'production'
 io.on('connection', onSocketConnected)
 exports.io = io
+const USER_SOCKET_MAP = {}
 function onSocketConnected (socket) {
-  const CLIENT_COUNT = io.sockets.server.engine.clientsCount
   socket.on('getRooms', () => {
-    socket.emit('rooms', Object.keys(io.sockets.adapter.rooms).slice(CLIENT_COUNT))
+    consola.info(_.map(io.sockets.adapter.rooms, (item, key) => { return [item.length, key] }))
+    socket.emit('rooms', Object.keys(io.sockets.adapter.rooms).filter(item => item.length <= 10))
   })
   socket.on('disconnect', () => {
     consola.warn(`${socket.id} has disconnected`)
   })
-  socket.on('join', (room) => {
-    consola.info(`${socket.id} has joined ROOM__${room}`)
-    socket.join(room)
+  socket.on('join', (room, user) => {
+    if (USER_SOCKET_MAP[socket.id] === undefined) {
+      USER_SOCKET_MAP[socket.id] = user
+    }
+
+    if (io.sockets.adapter.rooms[room] !== undefined) {
+      socket.join(room)
+      io.to(room).emit('message', { username: user, room, action: 'join', content: null })
+      consola.info(`${socket.id} has joined ROOM__${room}`)
+    } else {
+      socket.join(room)
+      consola.info(`${socket.id} create ROOM__${room}`)
+      io.sockets.emit('rooms', Object.keys(io.sockets.adapter.rooms).filter(item => item.length <= 10))
+    }
+  })
+  socket.on('message', ({ room, content, username }) => {
+    io.to(room).emit('message', { username, room, action: 'default', content })
   })
   socket.on('leave', (room) => {
     consola.info(`${socket.id} has leave ROOM__${room}`)
