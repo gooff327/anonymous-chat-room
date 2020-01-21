@@ -2,6 +2,8 @@
 
 > Chat anonymously on the internet
 
+![screenshot 2020-01-21 下午5.50.40.png](https://i.loli.net/2020/01/21/RWkfhJLoFvu53w9.png)
+
 ## Build Setup
 
 ``` bash
