@@ -55,12 +55,19 @@ function onSocketConnected (socket) {
     }
   })
 
-
   socket.on('message', ({ room, content, username }) => {
     io.to(room).emit('message', { username, room, action: 'DEFAULT', content })
   })
   socket.on('leave', (room, user) => {
     consola.info(`${socket.id} has leave ROOM__${room}`)
+    const ROOM = {
+      name: room,
+      length: io.sockets.adapter.rooms[room].length - 1,
+      members: _.map(io.sockets.adapter.rooms[room].sockets, (_, key) => USER_SOCKET_MAP[key])
+    }
+    ROOM.members.splice(ROOM.members.indexOf(USER_SOCKET_MAP[socket.id]), 1)
+    consola.log(ROOM)
+    io.to(room).emit('rooms::update', ROOM)
     socket.leave(room)
     io.to(room).emit('message', { username: user, room, action: 'LEAVE', content: null })
   })

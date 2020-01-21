@@ -23,14 +23,44 @@
               </v-list-item-content>
             </v-list-item>
           </v-list-item-group>
-          <v-subheader v-if="rooms.length > 0" class="mt-4 grey--text text--darken-1">
-            ROOMS
-          </v-subheader>
-          <Rooms :active="activeRooms" @roomSelected="handleActiveRoomChange" :rooms="rooms" />
+          <v-autocomplete
+            v-if="rooms.length > 0"
+            search-input="search"
+            loading="isLoading"
+            hide-no-data
+            prepend-inner-icon="mdi-magnify"
+            class="mx-5 my-2"
+            label="SEARCH"
+            clearable
+            rounded
+            dense
+            outlined
+          />
+          <v-expansion-panels class="mx-0 my-0" :value="0" :flat="true" :hover="true">
+            <v-expansion-panel>
+              <v-expansion-panel-header v-if="rooms.length > 0" class="my-0 grey--text text--darken-1">
+                ROOMS
+              </v-expansion-panel-header>
+              <v-expansion-panel-content class="expand-content">
+                <Rooms :active="activeRooms" @roomSelected="handleActiveRoomChange" :rooms="rooms" />
+              </v-expansion-panel-content>
+            </v-expansion-panel>
+          </v-expansion-panels>
+          <v-expansion-panels :value="0" :flat="true" :hover="true">
+            <v-expansion-panel>
+              <v-expansion-panel-header v-if="activeRooms.length > 0" class="mt-4 grey--text text--darken-1">
+                MEMBERS
+              </v-expansion-panel-header>
+              <v-expansion-panel-content class="expand-content">
+                <Members v-if="activeRooms.length > 0" :users="users"/>
+              </v-expansion-panel-content>
+            </v-expansion-panel>
+          </v-expansion-panels>
           <v-menu
             :close-on-content-click="false"
             :nudge-width="200"
             v-model="roomCreatorVisible"
+            transition="scale-transition"
             offset-x
           >
             <template v-slot:activator="{ on }">
@@ -104,23 +134,17 @@
           <span class="title">Keyboard-Hero</span>
         </v-toolbar-title>
         <v-spacer />
-        <v-row
-          align="center"
-          style="max-width: 300px"
-        >
-          <v-text-field
-            :append-icon-cb="() => {}"
-            append-icon="mdi-shield-search"
-            color="white"
-            hide-details
-            placeholder="Search room / user..."
-            single-line
-          />
-        </v-row>
       </v-app-bar>
 
       <v-content>
-        <Chat v-if="activeRooms.length >= 1" @notify="notifyHandler" :username="username" :room="openedRoom" :messages="currentMessages" />
+        <Chat
+          v-if="activeRooms.length >= 1"
+          @leaveRoom="handleLeaveRoom"
+          @notify="notifyHandler"
+          :username="username"
+          :room="openedRoom"
+          :messages="currentMessages"
+        />
       </v-content>
     </v-app>
     <v-snackbar
@@ -141,6 +165,7 @@
 
 <script>
 import { debounce } from 'lodash'
+import Members from '../components/Members'
 
 import Rooms from '../components/Rooms'
 import Chat from '../components/Chat'
@@ -148,6 +173,7 @@ import socket from '../plugins/socket.io'
 
 export default {
   components: {
+    Members,
     Rooms,
     Chat
   },
@@ -160,6 +186,7 @@ export default {
       activeRooms: [],
       errorMessages: [],
       successMessages: [],
+      isLoading: false,
       loading: false,
       snackbarProps: {
         value: false,
@@ -192,6 +219,10 @@ export default {
         return TMP
       }
       return socket.id
+    },
+    users () {
+      const ROOM = this.rooms.find(item => item.name === this.activeRooms[0]) || { members: [] }
+      return ROOM.members
     }
   },
   watch: {
@@ -245,6 +276,13 @@ export default {
     })
   },
   methods: {
+    search () {},
+    handleLeaveRoom (roomName) {
+      const INDEX = this.activeRooms.indexOf(roomName)
+      if (INDEX > -1) {
+        this.activeRooms.splice(INDEX, 1)
+      }
+    },
     notifyHandler (msg) {
       this.snackbarProps = Object.assign({}, this.snackbarProps, msg, { value: true })
     },
@@ -286,3 +324,15 @@ export default {
   }
 }
 </script>
+<style scoped lang="scss">
+  .expand-content {
+    max-height: 30vh;
+    overflow: scroll;
+    overflow: -moz-scrollbars-none;
+    -ms-overflow-style: none;
+    &::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+    }
+  }
+</style>

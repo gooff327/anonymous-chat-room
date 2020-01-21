@@ -32,6 +32,7 @@
           <section ref="content" v-if="messages.length > 0" class="card__content" id="card__content">
             <Message
               v-for="(item, index) of messages"
+              :username="username"
               :message="item"
               :key="index"/>
           </section>
@@ -67,8 +68,8 @@
                   mdi-send-outline
                 </v-icon>
               </v-btn>
-              <v-btn>
-                CLOSE
+              <v-btn @click="handleLeaveRoom">
+                LEAVE
                 <v-icon color="error">
                   mdi-close-outline
                 </v-icon>
@@ -115,6 +116,10 @@ export default {
     }
   },
   methods: {
+    handleLeaveRoom () {
+      socket.emit('leave', this.room.name, this.username)
+      this.$emit('leaveRoom', this.room.name)
+    },
     handleSendMsg () {
       if (this.content === '') {
         this.$emit('notify', { content: 'Cannot send empty message ！', color: '#ff5252' })
@@ -125,7 +130,6 @@ export default {
       this.content = ''
     },
     scroll () {
-      console.log('scroll')
       const CONTENT = this.$refs.content
       if (CONTENT && CONTENT.scrollHeight > CONTENT.offsetHeight) {
         CONTENT.scroll({ top: CONTENT.scrollHeight, behavior: 'smooth' })
@@ -154,8 +158,11 @@ export default {
       height: 88%;
       padding-bottom: 20px;
       overflow: scroll;
+      overflow: -moz-scrollbars-none;
+      -ms-overflow-style: none;
       &::-webkit-scrollbar {
         display: none !important;
+        width: 0 !important;
       }
     }
   }

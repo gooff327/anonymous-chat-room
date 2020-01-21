@@ -19,7 +19,7 @@
           </v-card>
         </v-col>
       </v-row>
-      <v-row v-else-if="message.action === 'JOIN' || message.action === 'LEAVE'">
+      <v-row v-else-if="message.action === 'JOIN' || message.action === 'LEAVE'" v-show="message.username !== username">
         <v-col class="d-flex justify-center">
           <v-chip small>
             <span class="font-weight-black mx-2" style="cursor: pointer">{{ message.username }}</span>
@@ -36,7 +36,8 @@ import socket from '../plugins/socket.io'
 export default {
   name: 'Message',
   props: {
-    message: { type: Object, default: () => [] }
+    message: { type: Object, default: () => [] },
+    username: { type: String, default: '' }
   },
   data: () => ({
     isActive: false
