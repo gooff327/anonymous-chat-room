@@ -1,5 +1,9 @@
 const webpack = require('webpack')
 module.exports = {
+  server: {
+    port: 8000, // default: 3000
+    host: '0.0.0.0' // default: localhost
+  },
   mode: 'universal',
   /*
   ** Headers of the page
@@ -48,7 +52,7 @@ module.exports = {
     '@nuxtjs/pwa'
   ],
   env: {
-    WS_URL: process.env.WS_URL || 'http://localhost:3000'
+    WS_URL: process.env.WS_URL || 'http://192.168.8.121:3000'
   },
   /*
   ** Axios module configuration

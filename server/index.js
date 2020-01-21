@@ -2,10 +2,12 @@ const Koa = require('koa')
 const consola = require('consola')
 const { Nuxt, Builder } = require('nuxt')
 const _ = require('lodash')
+const cors = require('koa-cors')
 
 const router = require('./router/index').router
 
 const app = new Koa()
+app.use(cors())
 const server = require('http').Server(app.callback())
 
 const io = require('socket.io')(server, { 'transports': ['websocket', 'polling'] })
@@ -69,7 +71,7 @@ async function start () {
   const nuxt = new Nuxt(config)
 
   const {
-    host = process.env.HOST || '127.0.0.1',
+    host = process.env.HOST || 'localhost',
     port = process.env.PORT || 3000
   } = nuxt.options.server
 
@@ -91,6 +93,7 @@ async function start () {
     nuxt.render(ctx.req, ctx.res)
   }
   )
+  consola.info(host, port)
   app.listen(port, host)
   consola.ready({
     message: `Server listening on http://${host}:${port}`,

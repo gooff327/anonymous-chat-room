@@ -1,5 +1,5 @@
 <template>
-  <v-container class="content lighten-5nt py-0">
+  <v-container @keydown.enter="handleSendMsg" class="content lighten-5nt py-0">
     <v-row align="center" justify="center">
       <v-col>
         <v-card
@@ -9,7 +9,7 @@
             <v-spacer />
             <v-toolbar-title>
               <v-chip
-                color="dark font-weight-bold"
+                color="dark font-weight-black"
                 pill
               >
                 <v-icon class="mx-1">
@@ -29,7 +29,7 @@
               <v-icon>mdi-dots-vertical</v-icon>
             </v-btn>
           </v-toolbar>
-          <section v-if="messages.length > 0" class="card__content">
+          <section ref="content" v-if="messages.length > 0" class="card__content" id="card__content">
             <Message
               v-for="(item, index) of messages"
               :message="item"
@@ -41,7 +41,6 @@
             color="white"
             hide-on-scroll
             horizontal
-            scroll-target=".card__content"
             scroll-threshold="500"
           >
             <div class="func-area">
@@ -59,10 +58,10 @@
               </v-btn>
             </div>
             <div class="input-area">
-              <v-text-field v-model="content" placeholder="CLICK TO START TYPING" />
+              <v-text-field ref="input" v-model="content" placeholder="CLICK TO START TYPING" />
             </div>
             <div class="btn-area">
-              <v-btn>
+              <v-btn @click="handleSendMsg">
                 SEND
                 <v-icon color="green">
                   mdi-send-outline
@@ -82,6 +81,9 @@
   </v-container>
 </template>
 <script>
+import { debounce } from 'lodash'
+import socket from '../plugins/socket.io'
+
 import Message from './Message'
 export default {
   name: 'Chat',
@@ -95,13 +97,40 @@ export default {
     messages: {
       type: Array,
       default: () => []
-    }
+    },
+    username: { type: String, default: '' }
   },
   data: () => ({
     content: ''
   }),
-  created () {
-    console.log(this.room)
+  watch: {
+    messages: {
+      handler (val, oldVal) {
+        if (val) {
+          const debounced = debounce(this.scroll, 250, { 'maxWait': 1000 })
+          debounced()
+        }
+      },
+      deep: true
+    }
+  },
+  methods: {
+    handleSendMsg () {
+      if (this.content === '') {
+        this.$emit('notify', { content: 'Cannot send empty message ！', color: '#ff5252' })
+        this.$refs.input.focus()
+        return
+      }
+      socket.send({ username: this.username, content: this.content, room: this.room.name })
+      this.content = ''
+    },
+    scroll () {
+      console.log('scroll')
+      const CONTENT = this.$refs.content
+      if (CONTENT && CONTENT.scrollHeight > CONTENT.offsetHeight) {
+        CONTENT.scroll({ top: CONTENT.scrollHeight, behavior: 'smooth' })
+      }
+    }
   }
 }
 </script>
@@ -119,6 +148,14 @@ export default {
         flex: 1;
         display: flex;
         justify-content: center;
+      }
+    }
+    .card__content {
+      height: 88%;
+      padding-bottom: 20px;
+      overflow: scroll;
+      &::-webkit-scrollbar {
+        display: none !important;
       }
     }
   }

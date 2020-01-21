@@ -56,6 +56,7 @@
                     NEW ROOM
                   </div>
                   <v-text-field
+                    ref="input"
                     :error-messages="errorMessages"
                     :success-messages="successMessages"
                     :loading="loading"
@@ -119,10 +120,11 @@
       </v-app-bar>
 
       <v-content>
-        <Chat v-if="activeRooms.length >= 1" :room="openedRoom" :messages="currentMessages" />
+        <Chat v-if="activeRooms.length >= 1" @notify="notifyHandler" :username="username" :room="openedRoom" :messages="currentMessages" />
       </v-content>
     </v-app>
     <v-snackbar
+      v-model="snackbarProps.value"
       v-bind="snackbarProps"
     >
       {{ snackbarProps.content }}
@@ -151,7 +153,6 @@ export default {
   },
   data () {
     return {
-      username: '',
       roomName: '',
       roomCreatorVisible: false,
       drawer: null,
@@ -161,9 +162,9 @@ export default {
       successMessages: [],
       loading: false,
       snackbarProps: {
-        value: true,
+        value: false,
         top: 'top',
-        color: '#41bb83',
+        color: 'error',
         timeout: 2000,
         content: 'DEFAULT CONTENT'
       },
@@ -184,6 +185,13 @@ export default {
     },
     currentMessages () {
       return this.messages[this.activeRooms[0]]
+    },
+    username () {
+      const TMP = sessionStorage.getItem('username')
+      if (TMP !== null) {
+        return TMP
+      }
+      return socket.id
     }
   },
   watch: {
@@ -216,7 +224,6 @@ export default {
   },
   mounted () {
     socket.emit('getRooms')
-    this.username = sessionStorage.getItem('username')
     socket.on('rooms', (data) => {
       this.rooms.splice(0, this.rooms.length, ...data)
     })
@@ -238,6 +245,9 @@ export default {
     })
   },
   methods: {
+    notifyHandler (msg) {
+      this.snackbarProps = Object.assign({}, this.snackbarProps, msg, { value: true })
+    },
     handleActiveRoomChange (val) {
       const index = val === undefined ? 0 : this.activeRooms.indexOf(this.rooms[val].name)
       if (index === 0) {
@@ -248,12 +258,11 @@ export default {
         this.activeRooms === [] ? this.activeRooms.push(this.rooms[val].name) : this.activeRooms.unshift(this.rooms[val].name)
       } else {
         socket.emit('join', this.rooms[val].name, this.username)
-        socket.send({ username: this.username, content: 'helloashdyiuasdashduhauisdhauhelloashdyiuasdashduhauisdhauhelloashdyiuasdashduhauisdhauhelloashdyiuasdashduhauisdhauhelloashdyiuasdashduhauisdhauhelloashdyiuasdashduhauisdhauhelloashdyiuasdashduhauisdhau', room: this.rooms[val].name })
         this.activeRooms === [] ? this.activeRooms.push(this.rooms[val].name) : this.activeRooms.unshift(this.rooms[val].name)
       }
     },
     checkName: debounce(function (value) {
-      return this.$axios.get('/check_room', { params: { name: value } }).then(
+      return this.$axios.get(window.location.origin + '/check_room', { params: { name: value } }).then(
         ({ data }) => {
           if (data.creatable) {
             this.successMessages.push('room name is invalid')

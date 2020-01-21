@@ -1,5 +1,5 @@
 <template>
-  <div class="container">
+  <div @keydown.enter="submitHandler" class="container">
     <div>
       <logo />
       <h1 class="title">
@@ -9,7 +9,7 @@
         Chat anonymously on the internet
       </h2>
       <div class="links flex justify-around">
-        <v-text-field id="username" type="text" v-model="username" placeholder="Username">
+        <v-text-field id="username" v-model="username" type="text" placeholder="Username">
           <template slot="append">
             <v-btn @click="submitHandler">
               Chat
@@ -36,7 +36,9 @@ export default {
   }),
   methods: {
     submitHandler () {
-      sessionStorage.setItem('username', this.username)
+      if (this.username !== '') {
+        sessionStorage.setItem('username', this.username)
+      }
       this.$router.push('/home')
     }
   }
