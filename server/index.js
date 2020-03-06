@@ -3,11 +3,12 @@ const consola = require('consola')
 const { Nuxt, Builder } = require('nuxt')
 const _ = require('lodash')
 const cors = require('koa-cors')
-
+const { connectDatabase } = require('./models/index')
 const router = require('./router/index').router
 
 const app = new Koa()
 app.use(cors())
+connectDatabase()
 const server = require('http').Server(app.callback())
 
 const io = require('socket.io')(server, { 'transports': ['websocket', 'polling'] })
@@ -25,9 +26,13 @@ const roomFilter = () => {
       ROOMS.push({ name, length, members: _.map(sockets, (_, key) => USER_SOCKET_MAP[key]) })
     }
   })
+  consola.error(ROOMS)
   return ROOMS
 }
 function onSocketConnected (socket) {
+  socket.on('submitUsername', (name) => {
+    USER_SOCKET_MAP[socket.id] = name
+  })
   socket.on('getRooms', () => {
     socket.emit('rooms', roomFilter())
   })
@@ -47,7 +52,6 @@ function onSocketConnected (socket) {
         length: io.sockets.adapter.rooms[room].length,
         members: _.map(io.sockets.adapter.rooms[room].sockets, (_, key) => USER_SOCKET_MAP[key]) }
       io.to(room).emit('rooms::update', ROOM)
-      consola.info(`${socket.id} has joined ROOM__${room}`)
     } else {
       socket.join(room)
       consola.info(`${socket.id} create ROOM__${room}`)
@@ -59,14 +63,12 @@ function onSocketConnected (socket) {
     io.to(room).emit('message', { username, room, action: 'DEFAULT', content })
   })
   socket.on('leave', (room, user) => {
-    consola.info(`${socket.id} has leave ROOM__${room}`)
     const ROOM = {
       name: room,
       length: io.sockets.adapter.rooms[room].length - 1,
       members: _.map(io.sockets.adapter.rooms[room].sockets, (_, key) => USER_SOCKET_MAP[key])
     }
     ROOM.members.splice(ROOM.members.indexOf(USER_SOCKET_MAP[socket.id]), 1)
-    consola.log(ROOM)
     io.to(room).emit('rooms::update', ROOM)
     socket.leave(room)
     io.to(room).emit('message', { username: user, room, action: 'LEAVE', content: null })

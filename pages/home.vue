@@ -87,6 +87,7 @@
                   </div>
                   <v-text-field
                     ref="input"
+                    :autofocus="true"
                     :error-messages="errorMessages"
                     :success-messages="successMessages"
                     :loading="loading"
@@ -254,12 +255,17 @@ export default {
     socket.off('message')
   },
   mounted () {
+    const USERNAME = sessionStorage.getItem('username')
+    if (USERNAME) {
+      socket.emit('submitUsername', USERNAME)
+    }
     socket.emit('getRooms')
     socket.on('rooms', (data) => {
       this.rooms.splice(0, this.rooms.length, ...data)
     })
     socket.on('message', ({ room, username, content, action }) => {
       const MSG_ENTRY = { username, content, action }
+
       if (this.messages[room] === undefined) {
         this.$set(this.messages, room, [MSG_ENTRY])
       } else {

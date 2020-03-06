@@ -11,7 +11,7 @@
             outlined
             class="px-3"
           >
-            <v-avatar color="pink" left>
+            <v-avatar color="#4FC1E9" left>
               <span class="white--text headline">
                 {{ item.slice(0,1) }}
               </span>

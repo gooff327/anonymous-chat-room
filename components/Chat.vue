@@ -6,18 +6,16 @@
           class="mx-auto content__record"
         >
           <v-toolbar dark>
+            <v-chip
+              color="dark font-weight-black"
+              pill
+            >
+              <v-icon class="mx-1">
+                mdi-home
+              </v-icon>
+              {{ room && room.name }}
+            </v-chip>
             <v-spacer />
-            <v-toolbar-title>
-              <v-chip
-                color="dark font-weight-black"
-                pill
-              >
-                <v-icon class="mx-1">
-                  mdi-home
-                </v-icon>
-                {{ room && room.name }}
-              </v-chip>
-            </v-toolbar-title>
             <v-spacer />
             <v-btn icon>
               <v-icon>mdi-magnify</v-icon>
@@ -29,12 +27,13 @@
               <v-icon>mdi-dots-vertical</v-icon>
             </v-btn>
           </v-toolbar>
-          <section ref="content" v-if="messages.length > 0" class="card__content" id="card__content">
+          <section id="card__content" ref="content" v-if="messages.length > 0" class="card__content">
             <Message
               v-for="(item, index) of messages"
               :username="username"
               :message="item"
-              :key="index"/>
+              :key="index"
+            />
           </section>
           <v-bottom-navigation
             absolute
@@ -45,10 +44,11 @@
             scroll-threshold="500"
           >
             <div class="func-area">
+              <input ref="image" type="file" accept="image/png, image/jpeg" style="display: none" />
               <v-btn>
                 <v-icon>mdi-sticker-emoji</v-icon>
               </v-btn>
-              <v-btn>
+              <v-btn ref="image-btn" @click="selectImage">
                 <v-icon>mdi-tooltip-image</v-icon>
               </v-btn>
               <v-btn>
@@ -83,6 +83,7 @@
 </template>
 <script>
 import { debounce } from 'lodash'
+
 import socket from '../plugins/socket.io'
 
 import Message from './Message'
@@ -102,7 +103,8 @@ export default {
     username: { type: String, default: '' }
   },
   data: () => ({
-    content: ''
+    content: '',
+    file: null
   }),
   watch: {
     messages: {
@@ -120,14 +122,24 @@ export default {
       socket.emit('leave', this.room.name, this.username)
       this.$emit('leaveRoom', this.room.name)
     },
-    handleSendMsg () {
-      if (this.content === '') {
+    handleSendMsg (file) {
+      const FILE = file instanceof File
+      if (this.content === '' && !FILE) {
         this.$emit('notify', { content: 'Cannot send empty message ！', color: '#ff5252' })
         this.$refs.input.focus()
-        return
+      } else {
+        socket.send({ username: this.username, content: FILE ? file : this.content, room: this.room.name })
+        this.content = FILE ? this.content : ''
       }
-      socket.send({ username: this.username, content: this.content, room: this.room.name })
-      this.content = ''
+    },
+    selectImage () {
+      const input = this.$refs.image
+      input.onchange = (e) => {
+        this.handleSendMsg(e.target.files[0])
+        e.target.value = ''
+      }
+      input.click()
+      return false
     },
     scroll () {
       const CONTENT = this.$refs.content

@@ -3,6 +3,7 @@
     <v-list-item-group @change="$emit('roomSelected', activeRoom)" v-model="activeRoom">
       <v-slide-y-transition group>
         <v-list-item
+          v-if="item.length > 0"
           :key="index"
           v-for="(item, index) of rooms"
           link

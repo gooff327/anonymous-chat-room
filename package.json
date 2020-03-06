@@ -14,14 +14,18 @@
   "dependencies": {
     "@nuxtjs/axios": "^5.3.6",
     "@nuxtjs/pwa": "^3.0.0-0",
+    "consola": "latest",
     "cross-env": "^5.2.0",
     "koa": "^2.6.2",
     "koa-cors": "^0.0.16",
     "koa-router": "^7.4.0",
     "lodash": "^4.17.15",
+    "mongoose": "^5.9.3",
     "nuxt": "^2.9.1",
     "socket.io": "^1.7.2",
-    "socket.io-client": "^1.7.2"
+    "socket.io-client": "^1.7.2",
+    "vue": "latest",
+    "vue-picture-preview": "^2.0.1"
   },
   "devDependencies": {
     "@nuxtjs/eslint-config": "^1.0.1",
