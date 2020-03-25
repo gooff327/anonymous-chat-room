@@ -8,7 +8,7 @@ const router = require('./router/index').router
 
 const app = new Koa()
 app.use(cors())
-connectDatabase()
+// connectDatabase()
 const server = require('http').Server(app.callback())
 
 const io = require('socket.io')(server, { 'transports': ['websocket', 'polling'] })
