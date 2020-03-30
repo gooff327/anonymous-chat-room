@@ -8,6 +8,9 @@ module.exports = {
   /*
   ** Headers of the page
   */
+  router: {
+    base: process.env.NODE_ENV === 'production' ? '/chat/' : '/'
+  },
   head: {
     title: process.env.npm_package_name || '',
     meta: [
@@ -51,9 +54,6 @@ module.exports = {
     '@nuxtjs/axios',
     '@nuxtjs/pwa'
   ],
-  env: {
-    WS_URL: process.env.WS_URL || 'http://192.168.8.121:3000'
-  },
   /*
   ** Axios module configuration
   ** See https://axios.nuxtjs.org/options

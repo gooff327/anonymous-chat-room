@@ -1,18 +1,7 @@
 version: '3.7'
 services:
-  mongo:
-    image: mongo
-    container_name: "mongo"
-    restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: gooff
-      MONGO_INITDB_ROOT_PASSWORD: gooff
-    ports:
-      - 27017:27017
-    volumes:
-      - ./database:/data/db
   web:
-    image: node:12.13.1-alpine
+    image: node:latest
     environment:
       - NODE_ENV=production
       - WS_URL=http://web:3000
@@ -27,7 +16,7 @@ services:
     working_dir: "/app/"
     ports:
       - 3000:3000
-      - 80:8000
-    command: /bin/sh -c "npm install && npm run build && node server/index.js"
+      - 8000:8000
+    command: sh -c "pm2 start server/index.js"
     restart: always
 

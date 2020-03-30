@@ -15,7 +15,7 @@
   "dependencies": {
     "@nuxtjs/axios": "^5.3.6",
     "@nuxtjs/pwa": "^3.0.0-0",
-    "consola": "latest",
+    "consola": "^2.11.3",
     "cross-env": "^5.2.0",
     "koa": "^2.6.2",
     "koa-cors": "^0.0.16",
