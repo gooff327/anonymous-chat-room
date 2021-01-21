@@ -23,7 +23,7 @@
     "lodash": "^4.17.15",
     "mongoose": "^5.9.3",
     "nuxt": "^2.9.1",
-    "socket.io": "^1.7.2",
+    "socket.io": "^2.4.0",
     "socket.io-client": "^1.7.2",
     "vue": "latest",
     "vue-picture-preview": "^2.0.1"
